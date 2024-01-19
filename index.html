@@ -7,43 +7,71 @@
 </head>
 <style>
     :root {
-  --nord0: #2e3440;
-  --nord1: #3b4252;
-  --nord2: #434c5e;
-  --nord3: #4c566a;
-  --nord4: #d8dee9;
-  --nord5: #e5e9f0;
-  --nord6: #eceff4;
-  --nord7: #8fbcbb;
-  --nord8: #88c0d0;
-  --nord9: #81a1c1;
-  --nord10: #5e81ac;
-  --nord11: #bf616a;
-  --nord12: #d08770;
-  --nord13: #ebcb8b;
-  --nord14: #a3be8c;
-  --nord15: #b48ead;
-}
+        --nord0: #2e3440;
+        --nord1: #3b4252;
+        --nord2: #434c5e;
+        --nord3: #4c566a;
+        --nord4: #d8dee9;
+        --nord5: #e5e9f0;
+        --nord6: #eceff4;
+        --nord7: #8fbcbb;
+        --nord8: #88c0d0;
+        --nord9: #81a1c1;
+        --nord10: #5e81ac;
+        --nord11: #bf616a;
+        --nord12: #d08770;
+        --nord13: #ebcb8b;
+        --nord14: #a3be8c;
+        --nord15: #b48ead;
+    }
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        display: flex;
+        justify-content: center;
+        margin-top: 5rem;
+    }
+    #game {
+        margin: 0.5rem;
+    }
     #grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        column-gap: 0.5em;
-        row-gap: 0.5em;
-        width: fit-content;
+        column-gap: 0.5rem;
+        row-gap: 0.5rem;
+        aspect-ratio: 1/1;
+        max-width: fit-content;
     }
+
     .gsq {
-        font-size: larger;
-        width: 2em;
-        height: 2em;
+        font-size: 2rem;
+        height: clamp(1.5em, 12vw, 4rem);
+        width: clamp(1.5em, 12vw, 4rem);
         background-color: #333;
         color: #fff;
         border-radius: 0.2em;
         display: flex;
         align-items: center;
         justify-content: center;
+        /* transition: all 0.125s ease-in-out; */
     }
     .selected {
         transform: scale(0.9);
+    }
+    @media screen and (max-width: 25rem) {
+        .gsq {
+            font-size: 1.5rem;
+        }
+        #grid {
+            column-gap: 0.2rem;
+            row-gap: 0.2rem;
+        }
+        body {
+            margin: 0;
+        }   
     }
 
     .gsq[data-val="1"] {
@@ -73,7 +101,6 @@
     .gsq[data-val="9"] {
         background: var(--nord10);
     }
-    
 
 </style>
 <script>
@@ -101,21 +128,21 @@ function sqToN(sq) {
     return sq[0] + 7 * sq[1];
 }
 
-function neighbours(pos) {
-    var res = [];
-    for(var dx = -1; dx < 2; dx++){
-        for(var dy = -1; dy < 2; dy++){
-            if((dx == 0 && dy == 0))
-                continue;
-            var nx = pos[0] + dx;
-            var ny = pos[1] + dy;
-            if(nx < 0 || ny < 0 || nx >= 7 || ny >= 7)
-                continue;
-            res.push([nx, ny]);
-        }
-    }
-    return res;
-}
+// function neighbours(pos) {
+//     var res = [];
+//     for(var dx = -1; dx < 2; dx++){
+//         for(var dy = -1; dy < 2; dy++){
+//             if((dx == 0 && dy == 0))
+//                 continue;
+//             var nx = pos[0] + dx;
+//             var ny = pos[1] + dy;
+//             if(nx < 0 || ny < 0 || nx >= 7 || ny >= 7)
+//                 continue;
+//             res.push([nx, ny]);
+//         }
+//     }
+//     return res;
+// }
 
 function select(n, sel) {
     var id = "gsq_id"+ n;
@@ -221,12 +248,13 @@ function onMouseUp(e) {
 
 function onMouseLeave(e) {
     selecting = false;
-    //console.log("ML: ", e);
+    console.log("ML: ", e);
     updateSelection(null);
 }
 function onMouseOver(e) {
-    //console.log("MO: ", e);
+    console.log("MO: ", e);
     var sq = tgToSq(e.target);
+    console.log("====> resolved sq", sq);
     if(!sq)
         return;
     updateSelection(sq);
@@ -263,6 +291,16 @@ function onload(e){
     g.addEventListener("mouseup", onMouseUp);
     g.addEventListener("mouseleave", onMouseLeave);
     g.addEventListener("mouseover", onMouseOver);
+
+    g.addEventListener("touchstart", onMouseDown);
+    g.addEventListener("touchend", onMouseUp);
+    g.addEventListener("touchcancel", onMouseLeave);
+    g.addEventListener("touchmove", (e) => {
+        var target = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        console.log("new target:", target);
+        return onMouseOver({target: target});
+    });
+
     var board = makeBoard();
     for(var i = 0; i < 49; i++) {
         var num = board[i];
@@ -274,8 +312,10 @@ function onload(e){
 window.addEventListener("load", onload);
 </script>
 <body>
-    <h1 id="cnum"></h1>
-    <div id="grid">
+    <div id="game">
+        <h1 id="cnum"></h1>
+        <div id="grid">
+        </div>
+        <h2 id="status"></h2>
     </div>
-    <h2 id="status"></h2>
 </html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trio Web</title>
+</head>
+<style>
+    :root {
+  --nord0: #2e3440;
+  --nord1: #3b4252;
+  --nord2: #434c5e;
+  --nord3: #4c566a;
+  --nord4: #d8dee9;
+  --nord5: #e5e9f0;
+  --nord6: #eceff4;
+  --nord7: #8fbcbb;
+  --nord8: #88c0d0;
+  --nord9: #81a1c1;
+  --nord10: #5e81ac;
+  --nord11: #bf616a;
+  --nord12: #d08770;
+  --nord13: #ebcb8b;
+  --nord14: #a3be8c;
+  --nord15: #b48ead;
+}
+    #grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        column-gap: 0.5em;
+        row-gap: 0.5em;
+        width: fit-content;
+    }
+    .gsq {
+        font-size: larger;
+        width: 2em;
+        height: 2em;
+        background-color: #333;
+        color: #fff;
+        border-radius: 0.2em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .selected {
+        transform: scale(0.9);
+    }
+
+    .gsq[data-val="1"] {
+        background: var(--nord7);
+    }
+    .gsq[data-val="2"] {
+        background: var(--nord12);
+    }
+    .gsq[data-val="3"] {
+        background: var(--nord9);
+    }
+    .gsq[data-val="4"] {
+        background: var(--nord13);
+    }
+    .gsq[data-val="5"] {
+        background: var(--nord11);
+    }
+    .gsq[data-val="6"] {
+        background: var(--nord8);
+    }
+    .gsq[data-val="7"] {
+        background: var(--nord15);
+    }
+    .gsq[data-val="8"] {
+        background: var(--nord14);
+    }
+    .gsq[data-val="9"] {
+        background: var(--nord10);
+    }
+    
+
+</style>
+<script>
+function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+}
+
+var selecting = false;
+var selectionStart = null;
+
+var target = -1;
+var stime = -1;
+
+function tgToSq(t) {
+    if(!t) null;
+    if(!t.id) t = t.parentElement;
+    if(!t.id.startsWith("gsq_id"))
+        return null;
+    var num = t.id.substring("gsq_id".length) - 0;
+    var y = Math.floor(num / 7);
+    var x = num % 7;
+    return [x, y];
+}
+function sqToN(sq) {
+    return sq[0] + 7 * sq[1];
+}
+
+function neighbours(pos) {
+    var res = [];
+    for(var dx = -1; dx < 2; dx++){
+        for(var dy = -1; dy < 2; dy++){
+            if((dx == 0 && dy == 0))
+                continue;
+            var nx = pos[0] + dx;
+            var ny = pos[1] + dy;
+            if(nx < 0 || ny < 0 || nx >= 7 || ny >= 7)
+                continue;
+            res.push([nx, ny]);
+        }
+    }
+    return res;
+}
+
+function select(n, sel) {
+    var id = "gsq_id"+ n;
+    var sq = document.getElementById(id);
+    if(sel)
+        sq.classList.add("selected");
+    else
+        sq.classList.remove("selected");
+}
+
+function getSelected() {
+    var sqs = Array.from(document.getElementsByClassName("selected")).map(tgToSq);
+    var sqvs = sqs.map(sq => document.getElementById("gsq_id"+sqToN(sq)).children[0].innerHTML - 0);
+    return {coords: sqs, vals: sqvs};
+}
+
+function updateSelection(sq) {    
+    for(var i = 0; i < 49; i++) select(i, false);
+    if(!selecting)
+        return;
+    
+    var dx = sq[0] - selectionStart[0];
+    var dy = sq[1] - selectionStart[1];
+
+    for(var i = 0; i < 3; i++) {
+        var x = selectionStart[0] + i * Math.sign(dx);
+        var y = selectionStart[1] + i * Math.sign(dy);
+        select(sqToN([x, y]), true);
+        if (dx != dy && dx != -dy && dx != 0 && dy != 0) return;
+        if(x == sq[0] && y == sq[1])
+            break;
+    }
+}
+
+function newNumber() {
+    var cnum = document.getElementById("cnum");
+    target = randInt(1, 50);
+    cnum.innerHTML = target;
+    stime = Date.now();
+}
+
+function checkWin(vals) {
+    var target = document.getElementById("cnum").innerHTML - 0;
+    var found = false;
+    var solution = "";
+    var dt = Date.now() - stime;
+
+    for(var i = 0; i < 3 && !found; i++) {
+        for(var j = 0; j < 3 && !found; j++) {
+            for(var k = 0; k < 3; k++) {
+                if(i == j || j == k || i == k) continue;
+                var a = vals[i];
+                var b = vals[j];
+                var c = vals[k];
+                console.log("testing: ", a, b, c, " = ", a * b + c);
+                if (a * b + c == target) {
+                    found = true;
+                    solution = a + " * " + b + " + " + c + " = " + target;
+                    break;
+                }
+                if (a * b - c == target) {
+                    found = true;
+                    solution = a + " * " + b + " - " + c + " = " + target;
+                    break;
+                }
+                
+            }
+        }
+    }
+    var status = document.getElementById("status");
+    if(found) {
+        status.innerHTML = "Correct! " + solution + " | " + (dt / 1000).toFixed(2);
+    } else {
+        status.innerHTML = "Wrong!";
+    }
+    newNumber();
+}
+
+function onMouseDown(e) {
+    e.preventDefault();
+    console.log("MD: ", e);
+    var sq = tgToSq(e.target);
+    if(!sq)
+        return;
+
+    selecting = true;
+    selectionStart = sq;
+    console.log("Started selection: ss:", sq);
+    updateSelection(sq);
+}
+
+
+function onMouseUp(e) {
+    if(selecting) {
+        var {coords, vals} = getSelected();
+        console.log(vals);
+        if(vals.length == 3)
+            checkWin(vals);
+    }
+    selecting = false;
+    updateSelection(null);
+}
+
+function onMouseLeave(e) {
+    selecting = false;
+    //console.log("ML: ", e);
+    updateSelection(null);
+}
+function onMouseOver(e) {
+    //console.log("MO: ", e);
+    var sq = tgToSq(e.target);
+    if(!sq)
+        return;
+    updateSelection(sq);
+}
+
+
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+  while (0 !== currentIndex) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+function makeBoard() {
+    var res = [];
+    for(var i = 0; i < 4; i++) res.push(randInt(1,10));
+    for(var j = 0; j < 5; j++){
+        for(var i = 1; i < 10; i++)
+        res.push(i); 
+    }
+    return shuffle(res);
+}
+
+function onload(e){
+    var g = document.getElementById("grid");
+    g.addEventListener("mousedown", onMouseDown);
+    g.addEventListener("mouseup", onMouseUp);
+    g.addEventListener("mouseleave", onMouseLeave);
+    g.addEventListener("mouseover", onMouseOver);
+    var board = makeBoard();
+    for(var i = 0; i < 49; i++) {
+        var num = board[i];
+        g.innerHTML += '<div class="gsq" id="gsq_id' + i +'" data-val="'+ num + '"><span>' + num + '</span></div>';
+    }
+    newNumber();
+};
+
+window.addEventListener("load", onload);
+</script>
+<body>
+    <h1 id="cnum"></h1>
+    <div id="grid">
+    </div>
+    <h2 id="status"></h2>
+</html>

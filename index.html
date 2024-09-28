@@ -28,14 +28,61 @@
         box-sizing: border-box;
         margin: 0;
         padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     }
     body {
         display: flex;
         justify-content: center;
+        align-items: center;
+        flex-direction: column;
         margin-top: 5rem;
+        color: var(--nord4);
+        background: var(--nord1);
+    }
+    header {
+        display: flex;
+        justify-content: space-between;
+        height: 6rem;
+    }
+    article {
+        font-size: 1.5rem;
+    }
+
+    #title {
+        font-size: 3rem;
+        text-align: center;
+        vertical-align: middle;
+        height: 6rem;
+    }
+
+    #play {
+        padding: 0.5rem 2rem;
+        text-align: center;
+        font-size: 2rem;
+        background: var(--nord9);
+        color: var(--nord4);
+        border-radius: 0.5rem;
+        font-weight: 900;
+    }
+
+    .labeled {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
     #game {
         margin: 0.5rem;
+        width: min-content;
+    }
+    #game > * {
+        margin: 1rem 0rem;
     }
     #grid {
         display: grid;
@@ -44,23 +91,71 @@
         row-gap: 0.5rem;
         aspect-ratio: 1/1;
         max-width: fit-content;
+        position: relative;
+        z-index: 1;
     }
-
+    #gridwrapper {
+        position: relative;
+    }
+    #overlay {
+        position: absolute;
+        top: -0.5rem;
+        left: -0.5rem;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+        background-color: #434c5edd;
+        border-radius: 0.2em;
+        box-sizing: content-box;
+        padding: 0.5rem;
+    }
+    #gameover {
+        margin-bottom: 2rem;
+    }
+    #gameovertext {
+        font-size: 2.5rem;
+        font-weight: 800;
+    }
+    #finalscoretext {
+        font-size: 1.5rem;
+        font-weight: 900;
+        text-align: center;
+    }
+    #finalscore {
+        font-size: 2.5rem;
+        font-weight: 900;
+        text-align: center;
+    }
+    a {
+        color: var(--nord6);
+        text-decoration: none;
+    }
     .gsq {
         font-size: 2rem;
         height: clamp(1.5em, 12vw, 4rem);
         width: clamp(1.5em, 12vw, 4rem);
+        font-weight: 900;
         background-color: #333;
         color: #fff;
         border-radius: 0.2em;
         display: flex;
         align-items: center;
         justify-content: center;
-        /* transition: all 0.125s ease-in-out; */
+        text-align: center;
+        vertical-align: middle;
+        transition: all 0.125s ease-in-out;
     }
     .selected {
         transform: scale(0.9);
     }
+    
+    .hidden {
+        visibility: hidden;
+    }
+    .none {
+        display: none;
+    }
+
     @media screen and (max-width: 25rem) {
         .gsq {
             font-size: 1.5rem;
@@ -113,6 +208,8 @@ var selectionStart = null;
 
 var target = -1;
 var stime = -1;
+
+var playing = false;
 
 function tgToSq(t) {
     if(!t) null;
@@ -184,8 +281,14 @@ function newNumber() {
     stime = Date.now();
 }
 
+function calcScore(s) {
+    return Math.max(10, 1000 - 0.5*Math.pow(50 * Math.max(0, s - 1),1.2));
+} 
+
 function checkWin(vals) {
     var target = document.getElementById("cnum").innerHTML - 0;
+    var scorecounter = document.getElementById("score");
+    var score = scorecounter.innerHTML - 0;
     var found = false;
     var solution = "";
     var dt = Date.now() - stime;
@@ -212,12 +315,14 @@ function checkWin(vals) {
             }
         }
     }
-    var status = document.getElementById("status");
     if(found) {
-        status.innerHTML = "Correct! " + solution + " | " + (dt / 1000).toFixed(2);
+        scorecounter.innerHTML = Math.round(score + calcScore(dt/1000));
     } else {
-        status.innerHTML = "Wrong!";
+        gameOver();
     }
+
+    
+
     newNumber();
 }
 
@@ -260,7 +365,36 @@ function onMouseOver(e) {
     updateSelection(sq);
 }
 
+function show(id) {
+    var el = document.getElementById(id);
+    el.classList.remove("none", "hidden");
+}
+function hide(id, layout = true) {
+    var el = document.getElementById(id);
+    el.classList.add(layout ? "none" : "hidden");
+}
 
+function gameOver(){
+    var playbtn = document.getElementById("play");
+    var score = document.getElementById("score").innerHTML - 0;
+    var finalscore = document.getElementById("finalscore");
+    finalscore.innerHTML = score;
+    playbtn.innerHTML = "Play again";
+    hide("header");
+    show("title");
+    show("overlay");
+    show("gameover");
+}
+
+function play() {
+    var playbtn = document.getElementById("play");
+    playing = true;
+    score = 0;
+    newNumber();
+    hide("title");
+    hide("overlay");
+    show("header");
+}
 
 function shuffle(array) {
   var currentIndex = array.length, temporaryValue, randomIndex;
@@ -297,15 +431,21 @@ function onload(e){
     g.addEventListener("touchcancel", onMouseLeave);
     g.addEventListener("touchmove", (e) => {
         var target = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-        console.log("new target:", target);
         return onMouseOver({target: target});
     });
 
     var board = makeBoard();
+    for(var i = 0; i < 9; i++) {
+        board[7*(Math.floor(i/3)) + i % 3] = i+1;
+    }
     for(var i = 0; i < 49; i++) {
         var num = board[i];
         g.innerHTML += '<div class="gsq" id="gsq_id' + i +'" data-val="'+ num + '"><span>' + num + '</span></div>';
     }
+    setInterval(() => {
+        var timer = document.getElementById("timeel");
+        timer.innerHTML = ((Date.now() - stime) / 1000.0).toFixed(1);
+    }, 100);
     newNumber();
 };
 
@@ -313,9 +453,40 @@ window.addEventListener("load", onload);
 </script>
 <body>
     <div id="game">
-        <h1 id="cnum"></h1>
-        <div id="grid">
+        <h1 id="title" class="center"><span>Trio</span></h1>
+        <header id="header" class="none">
+            <div class="labeled">
+                <h2 class="label">Number</h2>
+                <h1 id="cnum"></h1>
+            </div>
+            <div class="labeled">
+                <h2 class="label">Time</h2>
+                <h1 id="timeel">0</h1>
+            </div>
+            <div class="labeled">
+                <h2 class="label">Score</h2>
+                <h1 id="score">0</h1>
+            </div>
+        </header>
+        <div id="gridwrapper">
+            <div id="grid"></div>
+            <div id="overlay" class="center">
+                <div id="gameover" class="center none">
+                    <h1 id="gameovertext">Game Over</h1>
+                    <h3 id="finalscoretext">You have reached a final score of</h3>
+                    <h1 id="finalscore">100</h1>
+                </div>
+                <div id="play" onclick="play()">Play</div>
+            </div>
         </div>
-        <h2 id="status"></h2>
+        <div class="center">
+            <h2 id="status"></h2>
+        </div>
+        <article>
+            Find a row, column, or diagonal of three consecutive numbers in the grid, where two of these numbers can be multiplied and the third added to the sum, to result in the target number.
+            <br>
+            For example, when if the target is 32, then you could mark the numbers <em>5 2 6</em>, as <em>5 &middot; 6 + 2 = 32</em>.
+        </article>
     </div>
+    <footer>Made with &hearts; by <a href="https://bohner.me">xzvf</a> on <a href="https://github.com/x-zvf/trio-web">github</a></footer>
 </html>

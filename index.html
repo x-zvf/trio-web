@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,12 +26,14 @@
         --nord14: #a3be8c;
         --nord15: #b48ead;
     }
+
     * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     }
+
     body {
         display: flex;
         justify-content: center;
@@ -40,13 +43,30 @@
         color: var(--nord4);
         background: var(--nord1);
     }
+
     header {
         display: flex;
         justify-content: space-between;
         height: 6rem;
     }
+
     article {
-        font-size: 1.5rem;
+        font-size: 1.15rem;
+        text-align: justify;
+    }
+
+    a {
+        color: var(--nord6);
+        text-decoration: none;
+    }
+
+    #game {
+        margin: 0.5rem;
+        width: min-content;
+    }
+
+    #game>* {
+        margin: 1rem 0rem;
     }
 
     #title {
@@ -56,35 +76,6 @@
         height: 6rem;
     }
 
-    #play {
-        padding: 0.5rem 2rem;
-        text-align: center;
-        font-size: 2rem;
-        background: var(--nord9);
-        color: var(--nord4);
-        border-radius: 0.5rem;
-        font-weight: 900;
-    }
-
-    .labeled {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-    .center {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-    #game {
-        margin: 0.5rem;
-        width: min-content;
-    }
-    #game > * {
-        margin: 1rem 0rem;
-    }
     #grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
@@ -95,9 +86,11 @@
         position: relative;
         z-index: 1;
     }
+
     #gridwrapper {
         position: relative;
     }
+
     #overlay {
         position: absolute;
         top: -0.5rem;
@@ -110,27 +103,80 @@
         box-sizing: content-box;
         padding: 0.5rem;
     }
+
+    #play {
+        padding: 0.5rem 2rem;
+        text-align: center;
+        font-size: 2rem;
+        background: var(--nord9);
+        color: var(--nord4);
+        border-radius: 0.5rem;
+        font-weight: 900;
+    }
+
     #gameover {
         margin-bottom: 2rem;
     }
+
     #gameovertext {
         font-size: 2.5rem;
-        font-weight: 800;
+        font-weight: 700;
     }
+
     #finalscoretext {
         font-size: 1.5rem;
         font-weight: 900;
         text-align: center;
     }
+
     #finalscore {
         font-size: 2.5rem;
         font-weight: 900;
         text-align: center;
     }
-    a {
-        color: var(--nord6);
-        text-decoration: none;
+
+    .label {
+        color: var(--nord4);
     }
+
+    .labeled {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: var(--nord6);
+    }
+
+    .center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .selected {
+        transform: scale(0.9);
+    }
+
+    .none {
+        display: none;
+    }
+
+    @media screen and (max-width: 25rem) {
+        .gsq {
+            font-size: 1.5rem;
+        }
+
+        #grid {
+            column-gap: 0.2rem;
+            row-gap: 0.2rem;
+        }
+
+        body {
+            margin: 0;
+        }
+    }
+
     .gsq {
         font-size: 2rem;
         height: clamp(1.5em, 12vw, 4rem);
@@ -146,312 +192,259 @@
         vertical-align: middle;
         transition: all 0.125s ease-in-out;
     }
-    .selected {
-        transform: scale(0.9);
-    }
-    
-    .hidden {
-        visibility: hidden;
-    }
-    .none {
-        display: none;
-    }
-
-    @media screen and (max-width: 25rem) {
-        .gsq {
-            font-size: 1.5rem;
-        }
-        #grid {
-            column-gap: 0.2rem;
-            row-gap: 0.2rem;
-        }
-        body {
-            margin: 0;
-        }   
-    }
 
     .gsq[data-val="1"] {
         background: var(--nord7);
     }
+
     .gsq[data-val="2"] {
         background: var(--nord12);
     }
+
     .gsq[data-val="3"] {
         background: var(--nord9);
     }
+
     .gsq[data-val="4"] {
         background: var(--nord13);
     }
+
     .gsq[data-val="5"] {
         background: var(--nord11);
     }
+
     .gsq[data-val="6"] {
         background: var(--nord8);
     }
+
     .gsq[data-val="7"] {
         background: var(--nord15);
     }
+
     .gsq[data-val="8"] {
         background: var(--nord14);
     }
+
     .gsq[data-val="9"] {
         background: var(--nord10);
     }
-
 </style>
 <script>
-function randInt(min, max) {
-    return Math.floor(Math.random() * (max - min) + min);
-}
-
-var selecting = false;
-var selectionStart = null;
-
-var target = -1;
-var stime = -1;
-
-var playing = false;
-
-function tgToSq(t) {
-    if(!t) null;
-    if(!t.id) t = t.parentElement;
-    if(!t.id.startsWith("gsq_id"))
-        return null;
-    var num = t.id.substring("gsq_id".length) - 0;
-    var y = Math.floor(num / 7);
-    var x = num % 7;
-    return [x, y];
-}
-function sqToN(sq) {
-    return sq[0] + 7 * sq[1];
-}
-
-// function neighbours(pos) {
-//     var res = [];
-//     for(var dx = -1; dx < 2; dx++){
-//         for(var dy = -1; dy < 2; dy++){
-//             if((dx == 0 && dy == 0))
-//                 continue;
-//             var nx = pos[0] + dx;
-//             var ny = pos[1] + dy;
-//             if(nx < 0 || ny < 0 || nx >= 7 || ny >= 7)
-//                 continue;
-//             res.push([nx, ny]);
-//         }
-//     }
-//     return res;
-// }
-
-function select(n, sel) {
-    var id = "gsq_id"+ n;
-    var sq = document.getElementById(id);
-    if(sel)
-        sq.classList.add("selected");
-    else
-        sq.classList.remove("selected");
-}
-
-function getSelected() {
-    var sqs = Array.from(document.getElementsByClassName("selected")).map(tgToSq);
-    var sqvs = sqs.map(sq => document.getElementById("gsq_id"+sqToN(sq)).children[0].innerHTML - 0);
-    return {coords: sqs, vals: sqvs};
-}
-
-function updateSelection(sq) {    
-    for(var i = 0; i < 49; i++) select(i, false);
-    if(!selecting)
-        return;
-    
-    var dx = sq[0] - selectionStart[0];
-    var dy = sq[1] - selectionStart[1];
-
-    for(var i = 0; i < 3; i++) {
-        var x = selectionStart[0] + i * Math.sign(dx);
-        var y = selectionStart[1] + i * Math.sign(dy);
-        select(sqToN([x, y]), true);
-        if (dx != dy && dx != -dy && dx != 0 && dy != 0) return;
-        if(x == sq[0] && y == sq[1])
-            break;
+    function randInt(min, max) {
+        return Math.floor(Math.random() * (max - min) + min);
     }
-}
 
-function newNumber() {
-    var cnum = document.getElementById("cnum");
-    target = randInt(1, 50);
-    cnum.innerHTML = target;
-    stime = Date.now();
-}
+    var selecting = false;
+    var selectionStart = null;
 
-function calcScore(s) {
-    return Math.max(10, 1000 - 0.5*Math.pow(50 * Math.max(0, s - 1),1.2));
-} 
+    var target = -1;
+    var stime = -1;
 
-function checkWin(vals) {
-    var target = document.getElementById("cnum").innerHTML - 0;
-    var scorecounter = document.getElementById("score");
-    var score = scorecounter.innerHTML - 0;
-    var found = false;
-    var solution = "";
-    var dt = Date.now() - stime;
+    var playing = false;
 
-    for(var i = 0; i < 3 && !found; i++) {
-        for(var j = 0; j < 3 && !found; j++) {
-            for(var k = 0; k < 3; k++) {
-                if(i == j || j == k || i == k) continue;
-                var a = vals[i];
-                var b = vals[j];
-                var c = vals[k];
-                console.log("testing: ", a, b, c, " = ", a * b + c);
-                if (a * b + c == target) {
-                    found = true;
-                    solution = a + " * " + b + " + " + c + " = " + target;
-                    break;
-                }
-                if (a * b - c == target) {
-                    found = true;
-                    solution = a + " * " + b + " - " + c + " = " + target;
-                    break;
-                }
-                
-            }
+    function tgToSq(t) {
+        if (!t) null;
+        if (!t.id) t = t.parentElement;
+        if (!t.id.startsWith("gsq_id"))
+            return null;
+        var num = t.id.substring("gsq_id".length) - 0;
+        var y = Math.floor(num / 7);
+        var x = num % 7;
+        return [x, y];
+    }
+    function sqToN(sq) {
+        return sq[0] + 7 * sq[1];
+    }
+
+    function select(n, sel) {
+        var id = "gsq_id" + n;
+        var sq = document.getElementById(id);
+        if (sel)
+            sq.classList.add("selected");
+        else
+            sq.classList.remove("selected");
+    }
+
+    function getSelected() {
+        var sqs = Array.from(document.getElementsByClassName("selected")).map(tgToSq);
+        var sqvs = sqs.map(sq => document.getElementById("gsq_id" + sqToN(sq)).children[0].innerHTML - 0);
+        return { coords: sqs, vals: sqvs };
+    }
+
+    function updateSelection(sq) {
+        for (var i = 0; i < 49; i++) select(i, false);
+        if (!selecting)
+            return;
+
+        var dx = sq[0] - selectionStart[0];
+        var dy = sq[1] - selectionStart[1];
+
+        for (var i = 0; i < 3; i++) {
+            var x = selectionStart[0] + i * Math.sign(dx);
+            var y = selectionStart[1] + i * Math.sign(dy);
+            select(sqToN([x, y]), true);
+            if (dx != dy && dx != -dy && dx != 0 && dy != 0) return;
+            if (x == sq[0] && y == sq[1])
+                break;
         }
     }
-    if(found) {
-        scorecounter.innerHTML = Math.round(score + calcScore(dt/1000));
-    } else {
-        gameOver();
+
+    function checkWin(vals) {
+        var target = document.getElementById("cnum").innerHTML - 0;
+        var scorecounter = document.getElementById("score");
+        var score = scorecounter.innerHTML - 0;
+        var found = false;
+        var dt = Date.now() - stime;
+
+        outer: for (var i = 0; i < 3 && !found; i++) {
+            for (var j = 0; j < 3 && !found; j++) {
+                for (var k = 0; k < 3; k++) {
+                    if (i == j || j == k || i == k) continue;
+                    var a = vals[i];
+                    var b = vals[j];
+                    var c = vals[k];
+                    if ((a * b + c == target) || (a * b - c == target)) {
+                        found = true;
+                        break outer;
+                    }
+                }
+            }
+        }
+        if (found) {
+            var points = Math.max(10, 1000 - 0.5 * Math.pow(50 * Math.max(0, (dt / 1000) - 1), 1.2));
+            scorecounter.innerHTML = Math.round(score + points);
+        } else {
+            gameOver();
+        }
+        newNumber();
     }
 
-    
+    function onMouseDown(e) {
+        e.preventDefault();
+        var sq = tgToSq(e.target);
+        if (!sq)
+            return;
 
-    newNumber();
-}
-
-function onMouseDown(e) {
-    e.preventDefault();
-    console.log("MD: ", e);
-    var sq = tgToSq(e.target);
-    if(!sq)
-        return;
-
-    selecting = true;
-    selectionStart = sq;
-    console.log("Started selection: ss:", sq);
-    updateSelection(sq);
-}
-
-
-function onMouseUp(e) {
-    if(selecting) {
-        var {coords, vals} = getSelected();
-        console.log(vals);
-        if(vals.length == 3)
-            checkWin(vals);
+        selecting = true;
+        selectionStart = sq;
+        updateSelection(sq);
     }
-    selecting = false;
-    updateSelection(null);
-}
 
-function onMouseLeave(e) {
-    selecting = false;
-    console.log("ML: ", e);
-    updateSelection(null);
-}
-function onMouseOver(e) {
-    console.log("MO: ", e);
-    var sq = tgToSq(e.target);
-    console.log("====> resolved sq", sq);
-    if(!sq)
-        return;
-    updateSelection(sq);
-}
-
-function show(id) {
-    var el = document.getElementById(id);
-    el.classList.remove("none", "hidden");
-}
-function hide(id, layout = true) {
-    var el = document.getElementById(id);
-    el.classList.add(layout ? "none" : "hidden");
-}
-
-function gameOver(){
-    var playbtn = document.getElementById("play");
-    var score = document.getElementById("score").innerHTML - 0;
-    var finalscore = document.getElementById("finalscore");
-    finalscore.innerHTML = score;
-    playbtn.innerHTML = "Play again";
-    hide("header");
-    show("title");
-    show("overlay");
-    show("gameover");
-}
-
-function play() {
-    var playbtn = document.getElementById("play");
-    playing = true;
-    score = 0;
-    newNumber();
-    hide("title");
-    hide("overlay");
-    show("header");
-}
-
-function shuffle(array) {
-  var currentIndex = array.length, temporaryValue, randomIndex;
-  while (0 !== currentIndex) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex -= 1;
-    temporaryValue = array[currentIndex];
-    array[currentIndex] = array[randomIndex];
-    array[randomIndex] = temporaryValue;
-  }
-
-  return array;
-}
-
-function makeBoard() {
-    var res = [];
-    for(var i = 0; i < 4; i++) res.push(randInt(1,10));
-    for(var j = 0; j < 5; j++){
-        for(var i = 1; i < 10; i++)
-        res.push(i); 
+    function onMouseUp(e) {
+        if (selecting) {
+            var { coords, vals } = getSelected();
+            if (vals.length == 3)
+                checkWin(vals);
+        }
+        selecting = false;
+        updateSelection(null);
     }
-    return shuffle(res);
-}
 
-function onload(e){
-    var g = document.getElementById("grid");
-    g.addEventListener("mousedown", onMouseDown);
-    g.addEventListener("mouseup", onMouseUp);
-    g.addEventListener("mouseleave", onMouseLeave);
-    g.addEventListener("mouseover", onMouseOver);
-
-    g.addEventListener("touchstart", onMouseDown);
-    g.addEventListener("touchend", onMouseUp);
-    g.addEventListener("touchcancel", onMouseLeave);
-    g.addEventListener("touchmove", (e) => {
-        var target = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-        return onMouseOver({target: target});
-    });
-
-    var board = makeBoard();
-    for(var i = 0; i < 9; i++) {
-        board[7*(Math.floor(i/3)) + i % 3] = i+1;
+    function onMouseLeave(e) {
+        selecting = false;
+        updateSelection(null);
     }
-    for(var i = 0; i < 49; i++) {
-        var num = board[i];
-        g.innerHTML += '<div class="gsq" id="gsq_id' + i +'" data-val="'+ num + '"><span>' + num + '</span></div>';
+    function onMouseOver(e) {
+        var sq = tgToSq(e.target);
+        if (!sq)
+            return;
+        updateSelection(sq);
     }
-    setInterval(() => {
-        var timer = document.getElementById("timeel");
-        timer.innerHTML = ((Date.now() - stime) / 1000.0).toFixed(1);
-    }, 100);
-    newNumber();
-};
 
-window.addEventListener("load", onload);
+    function show(id) {
+        var el = document.getElementById(id);
+        el.classList.remove("none");
+    }
+    function hide(id) {
+        var el = document.getElementById(id);
+        el.classList.add("none");
+    }
+
+    function gameOver() {
+        var playbtn = document.getElementById("play");
+        var score = document.getElementById("score").innerHTML - 0;
+        var finalscore = document.getElementById("finalscore");
+        finalscore.innerHTML = score;
+        playbtn.innerHTML = "Play again";
+        hide("header");
+        show("title");
+        show("overlay");
+        show("gameover");
+    }
+
+    function newNumber() {
+        var cnum = document.getElementById("cnum");
+        target = randInt(1, 50);
+        cnum.innerHTML = target;
+        stime = Date.now();
+    }
+
+    function play() {
+        var playbtn = document.getElementById("play");
+        playing = true;
+        score = 0;
+        newNumber();
+        hide("title");
+        hide("overlay");
+        show("header");
+    }
+
+    function shuffle(array) {
+        var currentIndex = array.length, temporaryValue, randomIndex;
+        while (0 !== currentIndex) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+            temporaryValue = array[currentIndex];
+            array[currentIndex] = array[randomIndex];
+            array[randomIndex] = temporaryValue;
+        }
+
+        return array;
+    }
+
+    function makeBoard() {
+        var res = [];
+        for (var i = 0; i < 4; i++) res.push(randInt(1, 10));
+        for (var j = 0; j < 5; j++) {
+            for (var i = 1; i < 10; i++)
+                res.push(i);
+        }
+        return shuffle(res);
+    }
+
+    function onload(e) {
+        var g = document.getElementById("grid");
+        g.addEventListener("mousedown", onMouseDown);
+        g.addEventListener("mouseup", onMouseUp);
+        g.addEventListener("mouseleave", onMouseLeave);
+        g.addEventListener("mouseover", onMouseOver);
+
+        g.addEventListener("touchstart", onMouseDown);
+        g.addEventListener("touchend", onMouseUp);
+        g.addEventListener("touchcancel", onMouseLeave);
+        g.addEventListener("touchmove", (e) => {
+            var target = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            return onMouseOver({ target: target });
+        });
+
+        var board = makeBoard();
+        for (var i = 0; i < 9; i++) {
+            board[7 * (Math.floor(i / 3)) + i % 3] = i + 1;
+        }
+        for (var i = 0; i < 49; i++) {
+            var num = board[i];
+            g.innerHTML += '<div class="gsq" id="gsq_id' + i + '" data-val="' + num + '"><span>' + num + '</span></div>';
+        }
+        setInterval(() => {
+            var timer = document.getElementById("timeel");
+            timer.innerHTML = ((Date.now() - stime) / 1000.0).toFixed(1);
+        }, 100);
+        newNumber();
+    };
+
+    window.addEventListener("load", onload);
 </script>
+
 <body>
     <div id="game">
         <h1 id="title" class="center"><span>Trio</span></h1>
@@ -484,10 +477,14 @@ window.addEventListener("load", onload);
             <h2 id="status"></h2>
         </div>
         <article>
-            Find a row, column, or diagonal of three consecutive numbers in the grid, where two of these numbers can be multiplied and the third added to the sum, to result in the target number.
+            Find a row, column, or diagonal of three consecutive numbers in the grid, where two of these numbers can be
+            multiplied and the third added to the sum, to result in the target number.
             <br>
-            For example, when if the target is 32, then you could mark the numbers <em>5 2 6</em>, as <em>5 &middot; 6 + 2 = 32</em>.
+            For example, when if the target is 32, then you could mark the numbers <em>5 2 6</em>, as <em>5 &middot; 6 +
+                2 = 32</em>.
         </article>
     </div>
-    <footer>Made with &hearts; by <a href="https://bohner.me">xzvf</a> on <a href="https://github.com/x-zvf/trio-web">github</a></footer>
+    <footer>Made with &hearts; by <a href="https://bohner.me">xzvf</a> on <a
+            href="https://github.com/x-zvf/trio-web">github</a></footer>
+
 </html>

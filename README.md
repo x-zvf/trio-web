@@ -7,4 +7,4 @@ This was mostly made in an afternoon (and finished a couple of months later), be
 [**Play**](https://x-zvf.github.io/trio-web/)
 
 # License
-This project is licensed under the MIT license.
+This project is licensed under the MIT license, see LICENSE file.
